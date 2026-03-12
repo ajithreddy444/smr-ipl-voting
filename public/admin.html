@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPL 2026 — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080b12;--surf:#0f1320;--surf2:#161c2c;--brd:#1e2640;--acc:#f5a623;--red:#e8315c;--grn:#00d4aa;--blue:#3b82f6;--purple:#8b5cf6;--txt:#dde1f0;--muted:#4a5270;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'Nunito',sans-serif;min-height:100vh}
+
+#adminLogin{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--surf);border:1px solid var(--brd);border-radius:18px;padding:32px;width:100%;max-width:360px;margin:16px}
+.login-title{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;color:var(--acc);margin-bottom:4px}
+.login-sub{color:var(--muted);font-size:.78rem;margin-bottom:20px}
+
+label{display:block;font-size:.64rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+input,select,textarea{width:100%;background:var(--surf2);border:1px solid var(--brd);border-radius:9px;padding:10px 13px;color:var(--txt);font-family:'Nunito',sans-serif;font-size:.85rem;outline:none;margin-bottom:10px;transition:.2s}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+select option{background:var(--surf2)}
+textarea{min-height:90px;resize:vertical;line-height:1.5}
+
+.btn{padding:8px 16px;font-family:'Bebas Neue',sans-serif;font-size:.92rem;letter-spacing:1.5px;border:none;border-radius:9px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:5px}
+.btn:hover:not(:disabled){opacity:.88;transform:translateY(-1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-primary{background:linear-gradient(135deg,var(--acc),#e08710);color:#000}
+.btn-success{background:rgba(0,212,170,.12);color:var(--grn);border:1px solid rgba(0,212,170,.3)}
+.btn-danger{background:rgba(232,49,92,.1);color:var(--red);border:1px solid rgba(232,49,92,.3)}
+.btn-muted{background:var(--surf2);color:var(--muted);border:1px solid var(--brd)}
+.btn-purple{background:rgba(139,92,246,.1);color:var(--purple);border:1px solid rgba(139,92,246,.3)}
+.btn-sm{padding:5px 12px;font-size:.82rem}
+.btn-xs{padding:3px 9px;font-size:.72rem}
+
+#adminApp{display:none}
+.layout{display:grid;grid-template-columns:190px 1fr;min-height:calc(100vh - 52px)}
+@media(max-width:640px){.layout{display:block}}
+header{background:var(--surf);border-bottom:1px solid var(--brd);padding:10px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--acc)}
+
+.sidebar{background:var(--surf);border-right:1px solid var(--brd);padding:10px 0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
+@media(max-width:640px){.sidebar{position:static;height:auto;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--brd)}}
+.nav-item{padding:10px 16px;font-size:.68rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:7px;transition:.2s;border-left:3px solid transparent;white-space:nowrap}
+.nav-item:hover{color:var(--txt)}
+.nav-item.active{color:var(--acc);border-left-color:var(--acc);background:rgba(245,166,35,.05)}
+@media(max-width:640px){.nav-item{border-left:none;border-bottom:2px solid transparent;padding:10px 12px;font-size:.62rem}.nav-item.active{border-bottom-color:var(--acc);border-left:none}}
+
+.content{padding:18px;overflow-y:auto;max-height:calc(100vh - 52px)}
+@media(max-width:640px){.content{max-height:none}}
+.panel{display:none}.panel.active{display:block}
+.panel-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;color:var(--acc);margin-bottom:14px}
+
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:14px;padding:16px;margin-bottom:12px}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:2px;color:var(--txt);margin-bottom:12px}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px}
+.stat-box{background:var(--surf);border:1px solid var(--brd);border-radius:11px;padding:12px;text-align:center}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:1px;color:var(--acc)}
+.stat-lbl{font-size:.58rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:1px}
+
+/* MATCH ADMIN CARD */
+.mac{background:var(--surf);border:1px solid var(--brd);border-radius:13px;padding:14px;margin-bottom:9px;position:relative;border-left:4px solid var(--brd)}
+.mac.on{border-left-color:var(--grn)}
+.mac.done-m{border-left-color:var(--acc)}
+.mac-teams{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;margin:3px 0}
+.mac-meta{font-size:.68rem;color:var(--muted);margin-bottom:10px}
+.mac-status{font-size:.6rem;font-weight:900;letter-spacing:1px;padding:3px 9px;border-radius:8px;text-transform:uppercase;display:inline-flex;align-items:center;gap:3px}
+.sb-on{background:rgba(0,212,170,.1);color:var(--grn);border:1px solid rgba(0,212,170,.25)}
+.sb-off{background:rgba(74,82,112,.1);color:var(--muted);border:1px solid var(--brd)}
+.sb-done{background:rgba(245,166,35,.1);color:var(--acc);border:1px solid rgba(245,166,35,.2)}
+.mac-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.mac-actions{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0}
+
+.bar-row{display:grid;grid-template-columns:38px 1fr 48px;align-items:center;gap:6px;margin-bottom:5px}
+.bar-label{font-weight:900;font-size:.7rem}
+.bar-track{background:var(--surf2);border-radius:6px;height:7px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;transition:width .6s}
+.bar-a{background:linear-gradient(90deg,var(--acc),#e0872a)}
+.bar-b{background:linear-gradient(90deg,var(--red),#b01040)}
+.bar-pct{font-size:.68rem;font-weight:800;color:var(--muted);text-align:right}
+
+/* RESULT FORM */
+.result-form{border-top:1px solid var(--brd);padding-top:12px;margin-top:10px}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.result-grid .full{grid-column:1/-1}
+.rfield label{font-size:.6rem;margin-bottom:4px}
+.rfield select,.rfield input{margin-bottom:0;padding:8px 10px;font-size:.8rem}
+.player-search-input{position:relative}
+.ps-input{width:100%;background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:7px 10px;color:var(--txt);font-family:'Nunito',sans-serif;font-size:.8rem;outline:none}
+.ps-input:focus{border-color:var(--purple)}
+.ps-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--brd);border-radius:9px;z-index:200;max-height:160px;overflow-y:auto;box-shadow:0 6px 24px rgba(0,0,0,.5);margin-top:3px;display:none}
+.ps-dropdown.open{display:block}
+.ps-option{padding:8px 12px;font-size:.8rem;cursor:pointer;border-bottom:1px solid rgba(30,38,64,.5);transition:.15s}
+.ps-option:hover{background:rgba(139,92,246,.1);color:var(--purple)}
+.ps-option:last-child{border-bottom:none}
+
+.msg{padding:8px 12px;border-radius:8px;font-size:.76rem;font-weight:700;margin-bottom:8px;display:none}
+.msg.s{background:rgba(0,212,170,.07);border:1px solid rgba(0,212,170,.25);color:var(--grn);display:block}
+.msg.e{background:rgba(232,49,92,.07);border:1px solid rgba(232,49,92,.25);color:var(--red);display:block}
+
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:.6rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:7px 9px;text-align:left;border-bottom:1px solid var(--brd)}
+.tbl td{padding:9px 9px;border-bottom:1px solid rgba(30,38,64,.5);font-size:.8rem;vertical-align:middle}
+.tbl tr:last-child td{border:none}
+.pin-badge{font-family:monospace;font-size:.88rem;background:var(--surf2);border:1px solid var(--brd);padding:2px 7px;border-radius:5px;letter-spacing:2px}
+
+.lb-row{display:flex;align-items:center;gap:9px;padding:10px;background:var(--surf2);border-radius:10px;margin-bottom:6px}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;width:28px;text-align:center;color:var(--muted)}
+.lb-pts{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--acc)}
+.lb-streak{font-size:.6rem;font-weight:900;color:var(--acc);background:rgba(245,166,35,.1);padding:2px 6px;border-radius:5px;border:1px solid rgba(245,166,35,.2)}
+
+.filter-row{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+.filter-btn{padding:4px 11px;background:var(--surf2);border:1px solid var(--brd);border-radius:14px;color:var(--muted);font-size:.68rem;font-weight:900;cursor:pointer;transition:.2s}
+.filter-btn.active,.filter-btn:hover{border-color:var(--acc);color:var(--acc)}
+
+.hint{font-size:.7rem;color:var(--muted);line-height:1.7;margin-bottom:9px}
+code{background:var(--surf2);padding:1px 6px;border-radius:4px;font-size:.78rem;color:var(--acc)}
+.week-badge{font-size:.62rem;font-weight:800;padding:3px 10px;border-radius:8px;background:rgba(59,130,246,.1);color:var(--blue);border:1px solid rgba(59,130,246,.2);display:inline-block;margin-bottom:10px}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.modal-grid .full{grid-column:1/-1}
+
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:14px;right:14px;background:var(--surf2);border:1px solid var(--brd);border-radius:10px;padding:9px 15px;font-size:.78rem;font-weight:800;z-index:9999;transform:translateY(60px);opacity:0;transition:.3s;pointer-events:none;max-width:260px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.s{border-color:rgba(0,212,170,.4);color:var(--grn)}
+#toast.e{border-color:rgba(232,49,92,.4);color:var(--red)}
+
+/* AWARD STATUS CHIPS IN ADMIN */
+.award-chip{font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:6px;background:rgba(139,92,246,.08);color:var(--purple);border:1px solid rgba(139,92,246,.2);display:inline-flex;align-items:center;gap:3px;margin:2px}
+</style>
+</head>
+<body>
+
+<div id="adminLogin">
+  <div class="login-box">
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">IPL 2026 Voting — Control Center</div>
+    <div id="loginMsg" class="msg"></div>
+    <label>Admin Key</label>
+    <input type="password" id="adminKeyInput" placeholder="Enter admin key" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="btn btn-primary" onclick="adminLogin()" style="width:100%;justify-content:center">ENTER →</button>
+  </div>
+</div>
+
+<div id="adminApp">
+  <header>
+    <div class="logo">IPL 2026 <span style="color:var(--muted);font-size:.85rem;letter-spacing:2px">ADMIN</span></div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-muted btn-sm" onclick="adminLogout()">Logout</button>
+    </div>
+  </header>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-item active" data-panel="matches" onclick="switchPanel('matches')">🏏 Matches</div>
+      <div class="nav-item" data-panel="users" onclick="switchPanel('users')">👥 Users</div>
+      <div class="nav-item" data-panel="leaderboard" onclick="switchPanel('leaderboard')">🏆 Leaderboard</div>
+      <div class="nav-item" data-panel="schedule" onclick="switchPanel('schedule')">📅 Schedule</div>
+      <div class="nav-item" data-panel="export" onclick="switchPanel('export')">📥 Export</div>
+    </div>
+    <div class="content">
+
+      <!-- MATCHES -->
+      <div id="panel-matches" class="panel active">
+        <div class="panel-title">Match Control</div>
+        <div class="stat-grid" id="matchStats"></div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterMatches('all',this)">All</button>
+          <button class="filter-btn" onclick="filterMatches('open',this)">🟢 Open</button>
+          <button class="filter-btn" onclick="filterMatches('upcoming',this)">⏳ Upcoming</button>
+          <button class="filter-btn" onclick="filterMatches('done',this)">✅ Done</button>
+        </div>
+        <div style="display:flex;gap:7px;margin-bottom:10px">
+          <button class="btn btn-muted btn-sm" onclick="loadAdminMatches()">🔄 Refresh</button>
+          <button class="btn btn-success btn-sm" onclick="copyWhatsAppMsg()">📱 WhatsApp Msg</button>
+        </div>
+        <div id="adminMatchList"><div style="text-align:center;padding:40px"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- USERS -->
+      <div id="panel-users" class="panel">
+        <div class="panel-title">Users</div>
+        <button class="btn btn-muted btn-sm" onclick="loadUsers()" style="margin-bottom:12px">🔄 Refresh</button>
+        <div class="card">
+          <div id="usersList"><div style="text-align:center;padding:20px"><div class="spinner"></div></div></div>
+        </div>
+      </div>
+
+      <!-- LEADERBOARD -->
+      <div id="panel-leaderboard" class="panel">
+        <div class="panel-title">Leaderboard</div>
+        <div style="display:flex;gap:7px;margin-bottom:12px">
+          <button class="btn btn-muted btn-sm" onclick="loadAdminLB('overall')">🏆 Overall</button>
+          <button class="btn btn-muted btn-sm" onclick="loadAdminLB('weekly')">📅 This Week</button>
+        </div>
+        <div id="adminLBList"></div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div id="panel-schedule" class="panel">
+        <div class="panel-title">Schedule Management</div>
+        <div class="card">
+          <div class="card-title">Add Users (Bulk)</div>
+          <div class="hint">One per line: <code>Name, Mobile</code> or <code>Name, Mobile, PIN</code></div>
+          <textarea id="usersCsv" placeholder="Rahul Sharma, 9876543210&#10;Priya Patel, 8765432109, 5678"></textarea>
+          <div id="usersUploadMsg" class="msg"></div>
+          <button class="btn btn-primary" onclick="uploadUsers()">ADD USERS</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Add New Match</div>
+          <div class="modal-grid">
+            <div><label>Match No.</label><input id="newMN" placeholder="M51"></div>
+            <div><label>Date</label><input id="newDate" type="date"></div>
+            <div><label>Team 1</label><input id="newT1" placeholder="RCB" maxlength="10"></div>
+            <div><label>Team 2</label><input id="newT2" placeholder="MI" maxlength="10"></div>
+            <div><label>Time IST</label><input id="newTime" placeholder="7:30 PM"></div>
+            <div class="full"><label>Venue</label><input id="newVenue" placeholder="Stadium, City"></div>
+          </div>
+          <div id="addMatchMsg" class="msg"></div>
+          <button class="btn btn-primary" onclick="addMatch()">ADD MATCH</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Edit Existing Match</div>
+          <div class="hint">Great for updating playoff TBD teams or fixing venue/time.</div>
+          <label>Select Match</label>
+          <select id="editMatchSelect" onchange="prefillEdit()"><option value="">— Select —</option></select>
+          <div class="modal-grid">
+            <div><label>Team 1</label><input id="editT1" placeholder="Keep blank to skip"></div>
+            <div><label>Team 2</label><input id="editT2" placeholder="Keep blank to skip"></div>
+            <div><label>Date</label><input id="editDate" type="date"></div>
+            <div><label>Time IST</label><input id="editTime" placeholder="7:30 PM"></div>
+            <div class="full"><label>Venue</label><input id="editVenue"></div>
+          </div>
+          <div id="editMatchMsg" class="msg"></div>
+          <button class="btn btn-primary" onclick="editMatch()">SAVE CHANGES</button>
+        </div>
+      </div>
+
+      <!-- EXPORT -->
+      <div id="panel-export" class="panel">
+        <div class="panel-title">Export & Tools</div>
+        <div class="card">
+          <div class="card-title">Download Data</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-success" onclick="exportData('votes')">⬇️ Votes CSV</button>
+            <button class="btn btn-success" onclick="exportData('leaderboard')">⬇️ Leaderboard CSV</button>
+            <button class="btn btn-muted" onclick="exportData('full')">⬇️ Full JSON Backup</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">WhatsApp Message Generator</div>
+          <label>Select Match</label>
+          <select id="waMatchSelect"><option value="">— select —</option></select>
+          <button class="btn btn-primary" onclick="generateWAMsg()" style="margin-top:4px;margin-bottom:10px">GENERATE</button>
+          <div id="waMsg" style="display:none;background:var(--surf2);border:1px solid var(--brd);border-radius:9px;padding:12px;font-size:.83rem;line-height:1.8;white-space:pre-wrap"></div>
+          <button id="waCopy" class="btn btn-success btn-sm" style="display:none;margin-top:8px" onclick="copyWAMsg()">📋 Copy Message</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const IPL_PLAYERS={
+  RCB:['Virat Kohli','Rajat Patidar','Phil Salt','Venkatesh Iyer','Josh Hazlewood','Krunal Pandya','Romario Shepherd','Jacob Bethell','Liam Livingstone','Tim David','Swapnil Singh','Yash Dayal','Suyash Sharma','Mohammed Siraj','Lungi Ngidi'],
+  MI: ['Rohit Sharma','Suryakumar Yadav','Tilak Varma','Hardik Pandya','Jasprit Bumrah','Quinton de Kock','Mitchell Santner','Deepak Chahar','Will Jacks','Naman Dhir','Karn Sharma','Trent Boult','Ryan Rickelton','Bevon Jacobs','Vignesh Puthur'],
+  CSK:['Ruturaj Gaikwad','MS Dhoni','Sarfaraz Khan','Jamie Overton','Akeal Hosein','Dewald Brevis','Prashant Veer','Ayush Mhatre','Ravichandran Ashwin','Deepak Hooda','Noor Ahmad','Matheesha Pathirana','Khaleel Ahmed','Kamlesh Nagarkoti','Shaik Rasheed'],
+  KKR:['Rinku Singh','Rovman Powell','Finn Allen','Tim Seifert','Cameron Green','Varun Chakravarthy','Harshit Rana','Anrich Nortje','Ramandeep Singh','Angkrish Raghuvanshi','Moeen Ali','Spencer Johnson','Mayank Markande','Umesh Yadav','Manish Pandey'],
+  SRH:['Travis Head','Abhishek Sharma','Heinrich Klaasen','Pat Cummins','Ishan Kishan','Nitish Kumar Reddy','Adam Zampa','Harshal Patel','Jaydev Unadkat','Zeeshan Ansari','Rahul Chahar','Simarjeet Singh','Wiaan Mulder','Kamindu Mendis','Brydon Carse'],
+  DC: ['KL Rahul','Jake Fraser-McGurk','Axar Patel','Kuldeep Yadav','Tristan Stubbs','Faf du Plessis','Ashutosh Sharma','Mohit Sharma','T Natarajan','Karun Nair','Darshan Nalkande','Vipraj Nigam','Dushmantha Chameera','Sameer Rizvi','Tripurana Vijay'],
+  RR: ['Sanju Samson','Yashasvi Jaiswal','Jos Buttler','Shimron Hetmyer','Yuzvendra Chahal','Trent Boult','Sandeep Sharma','Riyan Parag','Dhruv Jurel','Kumar Kartikeya','Shubham Dubey','Wanindu Hasaranga','Maheesh Theekshana','Nitish Rana','Akash Madhwal'],
+  GT: ['Shubman Gill','David Miller','Rashid Khan','Kagiso Rabada','Mohammed Shami','Washington Sundar','Wriddhiman Saha','Sai Sudharsan','Shahrukh Khan','Vijay Shankar','Rahul Tewatia','Noor Ahmad','Azmatullah Omarzai','Ishant Sharma','Gerald Coetzee'],
+  LSG:['Nicholas Pooran','Ravi Bishnoi','Avesh Khan','Mohsin Khan','Mark Wood','David Willey','Prerak Mankad','Ayush Badoni','Deepak Hooda','Manimaran Siddharth','Naveen-ul-Haq','Matt Henry','Shamar Joseph','Aryan Juyal','Himmat Singh'],
+  PBKS:['Shikhar Dhawan','Sam Curran','Liam Livingstone','Jonny Bairstow','Arshdeep Singh','Kagiso Rabada','Rahul Chahar','Jitesh Sharma','Prabhsimran Singh','Shashank Singh','Atharva Taide','Chris Woakes','Nathan Ellis','Harpreet Bhatia','Harshal Patel'],
+};
+const AWARD_KEYS=[
+  {key:'potm',label:'Player of the Match',emoji:'⭐'},
+  {key:'super_striker',label:'Super Striker',emoji:'💥'},
+  {key:'super_sixes',label:'Six Machine',emoji:'🚀'},
+  {key:'fours_king',label:'Fours King',emoji:'🎯'},
+];
+
+let adminKey='',allAdminMatches=[],adminFilter='all';
+const H=()=>({'Content-Type':'application/json','x-admin-key':adminKey});
+async function api(url,opts={}){
+  const r=await fetch(url,{...opts,headers:{...H(),...(opts.headers||{})}});
+  if(r.status===403){toast('Wrong admin key','e');adminLogout();return null;}
+  return{ok:r.ok,data:await r.json()};
+}
+
+function adminLogin(){
+  const k=document.getElementById('adminKeyInput').value.trim();if(!k)return;
+  adminKey=k;
+  document.getElementById('adminLogin').style.display='none';
+  document.getElementById('adminApp').style.display='block';
+  loadAdminMatches();loadUsers();
+}
+function adminLogout(){adminKey='';allAdminMatches=[];document.getElementById('adminApp').style.display='none';document.getElementById('adminLogin').style.display='flex';document.getElementById('adminKeyInput').value='';}
+function switchPanel(p){
+  document.querySelectorAll('.panel').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.panel===p));
+  document.getElementById(`panel-${p}`).classList.add('active');
+  if(p==='leaderboard')loadAdminLB('overall');
+  if(p==='users')loadUsers();
+  if(p==='schedule')populateEditDropdown();
+}
+
+// ── MATCHES ───────────────────────────────────────────────────────────────────
+async function loadAdminMatches(){
+  document.getElementById('adminMatchList').innerHTML='<div style="text-align:center;padding:40px"><div class="spinner"></div></div>';
+  const res=await api('/api/admin/matches');if(!res)return;
+  allAdminMatches=res.data;
+  const total=allAdminMatches.length,open=allAdminMatches.filter(m=>m.voting_enabled&&!m.winner).length,done=allAdminMatches.filter(m=>m.winner).length,votes=allAdminMatches.reduce((a,m)=>a+(parseInt(m.total_votes)||0),0);
+  document.getElementById('matchStats').innerHTML=`
+    <div class="stat-box"><div class="stat-val">${total}</div><div class="stat-lbl">Matches</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--grn)">${open}</div><div class="stat-lbl">Open</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--muted)">${done}</div><div class="stat-lbl">Done</div></div>
+    <div class="stat-box"><div class="stat-val">${votes}</div><div class="stat-lbl">Votes</div></div>`;
+  populateWASelect();filterMatches(adminFilter);
+}
+
+function filterMatches(f,btn){
+  adminFilter=f;
+  if(btn){document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  let list=allAdminMatches;
+  if(f==='open')list=allAdminMatches.filter(m=>m.voting_enabled&&!m.winner);
+  else if(f==='upcoming')list=allAdminMatches.filter(m=>!m.voting_enabled&&!m.winner);
+  else if(f==='done')list=allAdminMatches.filter(m=>m.winner);
+  document.getElementById('adminMatchList').innerHTML=list.length?list.map(renderMAC).join(''):'<div style="text-align:center;padding:40px;color:var(--muted)">No matches.</div>';
+}
+
+function renderMAC(m){
+  const done=!!m.winner,open=m.voting_enabled&&!done;
+  const cls=done?'done-m':open?'on':'';
+  const badge=done?`<span class="mac-status sb-done">✅ ${m.winner}</span>`
+    :open?`<span class="mac-status sb-on">🟢 Open</span>`:`<span class="mac-status sb-off">🔴 Closed</span>`;
+  const t1=m.team1,t2=m.team2;
+  const p1=m.vote_stats?.[t1]?.pct??0,p2=m.vote_stats?.[t2]?.pct??0,c1=m.vote_stats?.[t1]?.count??0,c2=m.vote_stats?.[t2]?.count??0;
+  const mr=m.match_result||{};
+
+  // Award display for done matches
+  const awardDisplay=done&&mr.potm?`<div style="margin-top:8px;display:flex;flex-wrap:wrap">
+    ${AWARD_KEYS.map(a=>mr[a.key]?`<span class="award-chip">${a.emoji} ${a.label}: <strong>${mr[a.key]}</strong></span>`:'').join('')}
+  </div>`:'';
+
+  const toggleBtn=!done?`<button class="btn btn-sm ${open?'btn-danger':'btn-success'}" onclick="toggleVoting('${m.match_number}',${!open})">${open?'🔴 Disable':'🟢 Enable'} Voting</button>`:'';
+  const setResultBtn=!done?`<button class="btn btn-purple btn-sm" onclick="toggleResultForm('${m.match_number}')">🏆 Set Result</button>`:'';
+
+  // Result form (hidden by default)
+  const allPlayers=[...(IPL_PLAYERS[t1]||[]),...(IPL_PLAYERS[t2]||[])];
+  const resultForm=!done?`<div id="rf-${m.match_number}" class="result-form" style="display:none">
+    <div style="font-size:.65rem;font-weight:900;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Set Match Result</div>
+    <div class="result-grid">
+      <div class="rfield full">
+        <label>Match Winner *</label>
+        <select id="rw-${m.match_number}">
+          <option value="">— Select Winner —</option>
+          <option value="${t1}">${t1} Wins</option>
+          <option value="${t2}">${t2} Wins</option>
+          <option value="no_result">No Result (Rain/D&L)</option>
+          <option value="void">Void / Abandoned</option>
+        </select>
+      </div>
+      ${AWARD_KEYS.map(a=>`<div class="rfield">
+        <label>${a.emoji} ${a.label}</label>
+        <div class="player-search-input" id="psi-${m.match_number}-${a.key}">
+          <input class="ps-input" id="psinp-${m.match_number}-${a.key}" placeholder="Search player…" autocomplete="off"
+            oninput="filterAdminPlayers('${m.match_number}','${a.key}',this.value,'${t1}','${t2}')"
+            onfocus="openAdminDD('${m.match_number}','${a.key}','${t1}','${t2}')"
+            onblur="setTimeout(()=>closeAdminDD('${m.match_number}','${a.key}'),200)">
+          <div class="ps-dropdown" id="psdd-${m.match_number}-${a.key}"></div>
+        </div>
+        <input type="hidden" id="rh-${m.match_number}-${a.key}">
+      </div>`).join('')}
+    </div>
+    <div id="rfmsg-${m.match_number}" class="msg"></div>
+    <button class="btn btn-primary btn-sm" onclick="submitResult('${m.match_number}','${t1}','${t2}')">CONFIRM RESULT</button>
+    <button class="btn btn-muted btn-sm" onclick="toggleResultForm('${m.match_number}')">Cancel</button>
+  </div>`:'';
+
+  return `<div class="mac ${cls}" id="mac-${m.match_number}">
+    <div class="mac-header">
+      <div>
+        <div style="font-size:.68rem;color:var(--muted);font-weight:800;letter-spacing:1px">${m.match_number} · ${fmtDate(m.match_date)} · ${m.time_ist}</div>
+        <div class="mac-teams">${t1} <span style="color:var(--muted);font-size:.9rem">vs</span> ${t2}</div>
+        <div class="mac-meta">📍 ${m.venue}</div>
+      </div>
+      ${badge}
+    </div>
+    <div class="bar-row"><span class="bar-label">${t1}</span><div class="bar-track"><div class="bar-fill bar-a" style="width:${p1}%"></div></div><span class="bar-pct">${p1}%(${c1})</span></div>
+    <div class="bar-row"><span class="bar-label">${t2}</span><div class="bar-track"><div class="bar-fill bar-b" style="width:${p2}%"></div></div><span class="bar-pct">${p2}%(${c2})</span></div>
+    <div style="font-size:.62rem;color:var(--muted);text-align:right;margin-bottom:8px">${m.total_votes||0} votes total</div>
+    ${awardDisplay}
+    <div class="mac-actions">
+      ${toggleBtn}${setResultBtn}
+      <button class="btn btn-muted btn-sm" onclick="toggleVotersList('${m.match_number}')">👁 Voters</button>
+      <button class="btn btn-muted btn-sm" onclick="copyMatchLink('${m.match_number}')">🔗 Link</button>
+    </div>
+    <div id="vl-${m.match_number}" style="display:none"></div>
+    ${resultForm}
+  </div>`;
+}
+
+async function toggleVoting(mn,enable){
+  const res=await api(`/api/admin/matches/${mn}/voting`,{method:'PATCH',body:JSON.stringify({enabled:enable})});
+  if(!res||!res.ok){toast(res?.data?.error||'Error','e');return;}
+  toast(`Voting ${enable?'ENABLED 🟢':'DISABLED 🔴'}`,'s');await loadAdminMatches();
+}
+function toggleResultForm(mn){
+  const rf=document.getElementById(`rf-${mn}`);if(rf)rf.style.display=rf.style.display==='none'?'block':'none';
+}
+function openAdminDD(mn,akey,t1,t2){filterAdminPlayers(mn,akey,document.getElementById(`psinp-${mn}-${akey}`)?.value||'',t1,t2);}
+function filterAdminPlayers(mn,akey,query,t1,t2){
+  const dd=document.getElementById(`psdd-${mn}-${akey}`);if(!dd)return;
+  const all=[...(IPL_PLAYERS[t1]||[]),(IPL_PLAYERS[t2]||[])].flat();
+  const q=(query||'').toLowerCase().trim();
+  const filtered=q?all.filter(p=>p.toLowerCase().includes(q)):all;
+  dd.innerHTML=filtered.slice(0,15).map(p=>`<div class="ps-option" onmousedown="selectAdminPlayer('${mn}','${akey}','${p.replace(/'/,"\\'")}',this)">${p}</div>`).join('');
+  dd.classList.add('open');
+}
+function selectAdminPlayer(mn,akey,player,el){
+  document.getElementById(`psinp-${mn}-${akey}`).value=player;
+  document.getElementById(`rh-${mn}-${akey}`).value=player;
+  document.getElementById(`psdd-${mn}-${akey}`).classList.remove('open');
+}
+function closeAdminDD(mn,akey){document.getElementById(`psdd-${mn}-${akey}`)?.classList.remove('open');}
+async function submitResult(mn,t1,t2){
+  const winner=document.getElementById(`rw-${mn}`)?.value;
+  if(!winner){showMsg(`rfmsg-${mn}`,'Select a winner!','e');return;}
+  if(!confirm(`Set result for ${mn}: "${winner}"?\n\nThis CANNOT be undone.`))return;
+  const body={winner};
+  AWARD_KEYS.forEach(a=>{const v=document.getElementById(`rh-${mn}-${a.key}`)?.value;if(v)body[a.key]=v;});
+  const res=await api(`/api/admin/matches/${mn}/result`,{method:'PATCH',body:JSON.stringify(body)});
+  if(!res||!res.ok){showMsg(`rfmsg-${mn}`,res?.data?.error||'Error','e');return;}
+  toast(res.data.message,'s');await loadAdminMatches();
+}
+
+async function toggleVotersList(mn){
+  const el=document.getElementById(`vl-${mn}`);
+  if(el.style.display==='block'){el.style.display='none';return;}
+  el.style.display='block';el.innerHTML='<div class="spinner"></div>';
+  const res=await api(`/api/admin/matches/${mn}/stats`);if(!res||!res.ok){el.innerHTML='<span style="color:var(--red)">Error</span>';return;}
+  const{voters,award_stats}=res.data;
+  let html='<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--brd)">';
+  if(voters.length){
+    html+='<div style="font-size:.6rem;font-weight:900;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">VOTES</div>';
+    html+=voters.map(v=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(30,38,64,.4);font-size:.76rem"><span style="font-weight:700">${v.name}</span><span style="font-weight:900;color:var(--acc)">${v.voted_for}</span></div>`).join('');
+  }else html+='<div style="color:var(--muted);font-size:.78rem">No votes yet.</div>';
+  if(award_stats?.length){
+    html+='<div style="font-size:.6rem;font-weight:900;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:10px 0 6px">AWARD PICKS</div>';
+    const grouped={};award_stats.forEach(a=>{if(!grouped[a.award_key])grouped[a.award_key]=[];grouped[a.award_key].push(a);});
+    AWARD_KEYS.forEach(a=>{const picks=grouped[a.key]||[];if(!picks.length)return;
+      html+=`<div style="margin-bottom:6px"><div style="font-size:.65rem;font-weight:800;color:var(--purple);margin-bottom:3px">${a.emoji} ${a.label}</div>`
+        +picks.map(p=>`<div style="display:flex;justify-content:space-between;font-size:.73rem;padding:2px 0"><span>${p.pick}</span><span style="color:var(--muted)">${p.c} picks</span></div>`).join('')+'</div>';
+    });
+  }
+  html+='</div>';el.innerHTML=html;
+}
+
+function copyMatchLink(mn){
+  const url=`${window.location.origin.replace('/admin','')}/?vote=${mn}`;
+  navigator.clipboard.writeText(url).then(()=>toast(`Link copied for ${mn}!`,'s'));
+}
+
+// ── USERS ─────────────────────────────────────────────────────────────────────
+async function loadUsers(){
+  document.getElementById('usersList').innerHTML='<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
+  const res=await api('/api/admin/users');if(!res||!res.ok)return;
+  const users=res.data;
+  if(!users.length){document.getElementById('usersList').innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:14px">No users. Add them in Schedule tab.</div>';return;}
+  document.getElementById('usersList').innerHTML=`<div style="font-size:.68rem;color:var(--muted);font-weight:800;margin-bottom:9px">${users.length} registered</div>
+    <table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Mobile</th><th>PIN</th><th></th></tr></thead>
+    <tbody>${users.map((u,i)=>`<tr><td style="color:var(--muted)">${i+1}</td><td style="font-weight:800">${u.name}</td><td style="font-family:monospace;font-size:.76rem">${u.mobile}</td><td><span class="pin-badge">${u.plain_pin||'—'}</span></td>
+    <td><button class="btn btn-muted btn-xs" onclick="resetPin('${u.mobile}','${u.name}')">Reset PIN</button></td></tr>`).join('')}</tbody></table>`;
+}
+async function resetPin(mobile,name){
+  const pin=prompt(`New PIN for ${name} (4-6 digits):`);
+  if(!pin||!/^\d{4,6}$/.test(pin)){alert('Invalid PIN');return;}
+  const res=await api(`/api/admin/users/${mobile}/reset-pin`,{method:'PATCH',body:JSON.stringify({pin})});
+  if(res?.ok){toast(`PIN for ${name}: ${pin}`,'s');loadUsers();}else toast(res?.data?.error||'Error','e');
+}
+async function uploadUsers(){
+  const raw=document.getElementById('usersCsv').value.trim();if(!raw)return;
+  const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const users=[],errors=[];
+  lines.forEach((l,i)=>{
+    const p=l.split(',').map(x=>x.trim());
+    if(p.length<2){errors.push(`Line ${i+1}: need Name, Mobile`);return;}
+    const mobile=p[p.length>2?p.length-2:p.length-1],pin=p.length>2?p[p.length-1]:undefined;
+    const name=p.slice(0,p.length>2?p.length-2:p.length-1).join(',').trim();
+    if(!/^\d{10}$/.test(mobile)){errors.push(`Line ${i+1}: invalid mobile`);return;}
+    users.push({name,mobile,...(pin?{pin}:{})});
+  });
+  if(errors.length){showMsg('usersUploadMsg',errors.join(', '),'e');return;}
+  const res=await api('/api/admin/users',{method:'POST',body:JSON.stringify({users})});
+  if(res?.ok){showMsg('usersUploadMsg',`✅ ${res.data.inserted} users added! PINs: ${res.data.users.map(u=>`${u.name}: ${u.pin}`).join(', ')}`,'s');document.getElementById('usersCsv').value='';loadUsers();}
+  else showMsg('usersUploadMsg',res?.data?.error||'Error','e');
+}
+
+// ── LEADERBOARD ───────────────────────────────────────────────────────────────
+async function loadAdminLB(type){
+  const el=document.getElementById('adminLBList');
+  el.innerHTML='<div style="text-align:center;padding:40px"><div class="spinner"></div></div>';
+  const medals=['🥇','🥈','🥉'];
+  if(type==='weekly'){
+    const res=await api('/api/leaderboard/weekly');if(!res||!res.ok)return;
+    const{week_start,week_end,leaderboard:board}=res.data;
+    const s=new Date(week_start).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const e=new Date(week_end).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    el.innerHTML=`<div class="week-badge">📅 ${s} – ${e}</div>`
+      +(board.length?board.map((p,i)=>`<div class="lb-row"><div class="lb-rank">${medals[i]||i+1}</div>
+        <div style="flex:1"><div style="font-weight:800;font-size:.85rem">${p.name}</div>
+        <div style="font-size:.65rem;color:var(--muted)">✅ ${p.correct_votes}/${p.total_votes} · Match: ${parseFloat(p.match_pts).toFixed(2)} · Awards: +${parseFloat(p.award_pts).toFixed(2)}</div></div>
+        <div><div class="lb-pts">${p.total_pts}</div><div style="font-size:.58rem;color:var(--muted)">PTS</div></div></div>`).join('')
+        :'<div style="color:var(--muted);padding:20px">No data this week.</div>');
+  }else{
+    const res=await api('/api/admin/leaderboard');if(!res||!res.ok)return;
+    const board=res.data;
+    el.innerHTML=board.length?board.map((p,i)=>`<div class="lb-row"><div class="lb-rank">${medals[i]||i+1}</div>
+      <div style="flex:1"><div style="font-weight:800;font-size:.85rem">${p.name}</div>
+      <div style="font-size:.63rem;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        ✅ ${p.correct_votes}/${p.total_votes} · +${parseFloat(p.award_pts||0).toFixed(2)} award pts · +${parseFloat(p.streak_pts||0).toFixed(2)} streak pts
+        ${p.current_streak>=3?`<span class="lb-streak">🔥 ${p.current_streak} streak</span>`:''}
+      </div></div>
+      <div><div class="lb-pts">${parseFloat(p.points).toFixed(2)}</div><div style="font-size:.58rem;color:var(--muted)">PTS</div></div></div>`).join('')
+      :'<div style="color:var(--muted);padding:20px">No data yet.</div>';
+  }
+}
+
+// ── SCHEDULE ──────────────────────────────────────────────────────────────────
+function populateEditDropdown(){
+  const sel=document.getElementById('editMatchSelect');
+  sel.innerHTML='<option value="">— Select —</option>'+allAdminMatches.map(m=>`<option value="${m.match_number}">${m.match_number}: ${m.team1} vs ${m.team2} (${m.match_date})</option>`).join('');
+}
+function populateWASelect(){
+  const sel=document.getElementById('waMatchSelect');
+  sel.innerHTML='<option value="">— select —</option>'+allAdminMatches.filter(m=>!m.winner).map(m=>`<option value="${m.match_number}">${m.match_number}: ${m.team1} vs ${m.team2} · ${m.match_date}</option>`).join('');
+}
+function prefillEdit(){
+  const mn=document.getElementById('editMatchSelect').value;
+  const m=allAdminMatches.find(x=>x.match_number===mn);if(!m)return;
+  document.getElementById('editT1').value=m.team1;document.getElementById('editT2').value=m.team2;
+  document.getElementById('editDate').value=m.match_date;document.getElementById('editTime').value=m.time_ist;
+  document.getElementById('editVenue').value=m.venue;
+}
+async function addMatch(){
+  const mn=document.getElementById('newMN').value.trim().toUpperCase(),t1=document.getElementById('newT1').value.trim().toUpperCase(),t2=document.getElementById('newT2').value.trim().toUpperCase();
+  const date=document.getElementById('newDate').value,time=document.getElementById('newTime').value.trim()||'7:30 PM',venue=document.getElementById('newVenue').value.trim();
+  if(!mn||!t1||!t2||!date||!venue){showMsg('addMatchMsg','Fill all fields','e');return;}
+  const res=await api('/api/admin/matches',{method:'POST',body:JSON.stringify({match_number:mn,team1:t1,team2:t2,match_date:date,venue,time_ist:time})});
+  if(res?.ok){showMsg('addMatchMsg',`✅ Match ${mn} added!`,'s');['newMN','newT1','newT2','newDate','newTime','newVenue'].forEach(id=>document.getElementById(id).value='');loadAdminMatches();}
+  else showMsg('addMatchMsg',res?.data?.error||'Error','e');
+}
+async function editMatch(){
+  const mn=document.getElementById('editMatchSelect').value;if(!mn){showMsg('editMatchMsg','Select a match','e');return;}
+  const body={};const t1=document.getElementById('editT1').value.trim(),t2=document.getElementById('editT2').value.trim(),date=document.getElementById('editDate').value,time=document.getElementById('editTime').value.trim(),venue=document.getElementById('editVenue').value.trim();
+  if(t1)body.team1=t1.toUpperCase();if(t2)body.team2=t2.toUpperCase();if(date)body.match_date=date;if(time)body.time_ist=time;if(venue)body.venue=venue;
+  if(!Object.keys(body).length){showMsg('editMatchMsg','Nothing to update','e');return;}
+  const res=await api(`/api/admin/matches/${mn}`,{method:'PUT',body:JSON.stringify(body)});
+  if(res?.ok){showMsg('editMatchMsg',`✅ ${mn} updated!`,'s');loadAdminMatches();}else showMsg('editMatchMsg',res?.data?.error||'Error','e');
+}
+
+// ── EXPORT & WA ───────────────────────────────────────────────────────────────
+function exportData(type){
+  fetch(`/api/admin/export/${type}`,{headers:{'x-admin-key':adminKey}}).then(r=>r.blob()).then(blob=>{
+    const ext=type==='full'?'json':'csv',url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=`ipl2026_${type}.${ext}`;a.click();URL.revokeObjectURL(url);toast(`Downloaded!`,'s');
+  }).catch(()=>toast('Export failed','e'));
+}
+function generateWAMsg(){
+  const mn=document.getElementById('waMatchSelect').value;if(!mn){toast('Select a match','e');return;}
+  const m=allAdminMatches.find(x=>x.match_number===mn);if(!m)return;
+  const url=`${window.location.origin.replace('/admin','')}/?vote=${mn}`;
+  const msg=`🏏 *IPL 2026 — ${m.match_number}*\n\n*${m.team1}* 🆚 *${m.team2}*\n📅 ${fmtDate(m.match_date)} · ${m.time_ist} IST\n📍 ${m.venue}\n\n🗳️ *Predict the winner + awards before toss!*\n👈 Tap the link\n\n${url}\n\n_Login: Mobile number + PIN_`;
+  document.getElementById('waMsg').textContent=msg;document.getElementById('waMsg').style.display='block';document.getElementById('waCopy').style.display='inline-flex';
+}
+function copyWAMsg(){navigator.clipboard.writeText(document.getElementById('waMsg').textContent).then(()=>toast('Copied! Paste in WhatsApp','s'));}
+function copyWhatsAppMsg(){
+  const open=allAdminMatches.filter(m=>m.voting_enabled&&!m.winner);
+  if(!open.length){toast('No open matches','e');return;}
+  const m=open[0],url=`${window.location.origin.replace('/admin','')}/?vote=${m.match_number}`;
+  const msg=`🏏 *IPL 2026 — ${m.match_number}*\n*${m.team1}* 🆚 *${m.team2}*\n📅 ${fmtDate(m.match_date)} · ${m.time_ist} IST\n📍 ${m.venue}\n🗳️ Vote now! → ${url}`;
+  navigator.clipboard.writeText(msg).then(()=>toast('WhatsApp message copied!','s'));
+}
+
+function showMsg(id,html,type){const el=document.getElementById(id);el.innerHTML=html;el.className=`msg ${type}`;}
+function toast(msg,type='s'){const t=document.getElementById('toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);}
+function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});}
+</script>
+</body>
+</html>

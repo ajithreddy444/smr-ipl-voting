@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ipl-voting-app
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_KEY
+        generateValue: false
+    plan: free
