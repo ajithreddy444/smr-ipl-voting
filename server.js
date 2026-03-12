@@ -197,25 +197,31 @@ async function getVoteStats(match_number) {
   return { stats, total };
 }
 
-// Weekly window: Saturday 00:00 to Friday 23:59 IST
+// Weekly window: Saturday 00:00 IST → Friday 23:59 IST
+// match_date is stored as plain 'YYYY-MM-DD' in DB so we just need IST date strings
 function getWeekWindow() {
-  const now = new Date();
-  // IST = UTC+5:30
-  const istOffset = 5.5 * 60 * 60 * 1000;
-  const istNow = new Date(now.getTime() + istOffset);
-  const day = istNow.getUTCDay(); // 0=Sun,6=Sat
-  const daysSinceSat = (day + 1) % 7; // days since last Saturday
-  const satStart = new Date(istNow);
-  satStart.setUTCDate(istNow.getUTCDate() - daysSinceSat);
-  satStart.setUTCHours(0, 0, 0, 0);
-  const friEnd = new Date(satStart);
-  friEnd.setUTCDate(satStart.getUTCDate() + 6);
-  friEnd.setUTCHours(23, 59, 59, 999);
-  // Convert back to UTC for DB query
-  return {
-    start: new Date(satStart.getTime() - istOffset).toISOString(),
-    end: new Date(friEnd.getTime() - istOffset).toISOString(),
-  };
+  // Get current date in IST (UTC+5:30)
+  const nowUTC = new Date();
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(nowUTC.getTime() + istOffsetMs);
+
+  // getUTCDay() on IST-shifted date: 0=Sun,1=Mon,...,6=Sat
+  const dayOfWeek = istNow.getUTCDay();
+
+  // Days since last Saturday: Sat=6→0, Sun=0→1, Mon=1→2, ..., Fri=5→6
+  const daysSinceSat = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
+
+  // Build Saturday date by subtracting days
+  const satIST = new Date(istNow);
+  satIST.setUTCDate(istNow.getUTCDate() - daysSinceSat);
+  const satDate = satIST.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+
+  // Friday is 6 days after Saturday
+  const friIST = new Date(satIST);
+  friIST.setUTCDate(satIST.getUTCDate() + 6);
+  const friDate = friIST.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+
+  return { start: satDate, end: friDate };
 }
 
 // Recalculate streak and total pts for a user after result is set
@@ -417,10 +423,10 @@ app.get('/api/leaderboard/weekly', async (req, res) => {
       LEFT JOIN award_picks ap_ss ON ap_ss.mobile=u.mobile AND ap_ss.match_number=v.match_number AND ap_ss.award_key='super_striker'
       LEFT JOIN award_picks ap_sx ON ap_sx.mobile=u.mobile AND ap_sx.match_number=v.match_number AND ap_sx.award_key='super_sixes'
       LEFT JOIN award_picks ap_fk ON ap_fk.mobile=u.mobile AND ap_fk.match_number=v.match_number AND ap_fk.award_key='fours_king'
-      WHERE m.match_date >= $1::date AND m.match_date <= $2::date
+      WHERE m.match_date >= $1 AND m.match_date <= $2
       GROUP BY u.name, u.mobile
       ORDER BY (COALESCE(SUM(CASE WHEN mr.winner IS NOT NULL AND mr.winner NOT IN ('no_result','void') AND v.voted_for=mr.winner THEN 1.0 ELSE 0 END),0) + COALESCE(SUM((CASE WHEN ap_potm.pick=mr.potm AND mr.potm IS NOT NULL THEN 0.25 ELSE 0 END)+(CASE WHEN ap_ss.pick=mr.super_striker AND mr.super_striker IS NOT NULL THEN 0.25 ELSE 0 END)+(CASE WHEN ap_sx.pick=mr.super_sixes AND mr.super_sixes IS NOT NULL THEN 0.25 ELSE 0 END)+(CASE WHEN ap_fk.pick=mr.fours_king AND mr.fours_king IS NOT NULL THEN 0.25 ELSE 0 END)),0)) DESC, u.name ASC
-    `, [start.split('T')[0], end.split('T')[0]]);
+    `, [start, end]);
     res.json({ week_start: start, week_end: end, leaderboard: rows.map(r => ({ ...r, total_pts: (parseFloat(r.match_pts) + parseFloat(r.award_pts)).toFixed(2) })) });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
