@@ -12,6 +12,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  max: 5,              // Neon free tier: keep pool small
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 const q = (text, params) => pool.query(text, params);
 
@@ -100,6 +103,23 @@ async function initDB() {
       best_streak    INTEGER DEFAULT 0
     );
   `);
+
+  // Safe migrations — add new columns if DB was created before v3
+  const migrations = [
+    `ALTER TABLE leaderboard ADD COLUMN IF NOT EXISTS award_pts NUMERIC(8,2) DEFAULT 0`,
+    `ALTER TABLE leaderboard ADD COLUMN IF NOT EXISTS streak_pts NUMERIC(8,2) DEFAULT 0`,
+    `ALTER TABLE leaderboard ADD COLUMN IF NOT EXISTS current_streak INTEGER DEFAULT 0`,
+    `ALTER TABLE leaderboard ADD COLUMN IF NOT EXISTS best_streak INTEGER DEFAULT 0`,
+    `ALTER TABLE match_results ADD COLUMN IF NOT EXISTS potm TEXT`,
+    `ALTER TABLE match_results ADD COLUMN IF NOT EXISTS super_striker TEXT`,
+    `ALTER TABLE match_results ADD COLUMN IF NOT EXISTS super_sixes TEXT`,
+    `ALTER TABLE match_results ADD COLUMN IF NOT EXISTS fours_king TEXT`,
+    `ALTER TABLE match_results ADD COLUMN IF NOT EXISTS settled_at TIMESTAMP DEFAULT NOW()`,
+  ];
+  for (const sql of migrations) {
+    try { await q(sql); } catch(e) { /* column already exists, safe to ignore */ }
+  }
+
   await seedIPL();
   console.log('✅ DB ready');
 }
@@ -328,22 +348,46 @@ app.post('/api/auth/logout', requireUser, async (req, res) => {
 // ─── USER: MATCHES ────────────────────────────────────────────────────────────
 app.get('/api/matches', requireUser, async (req, res) => {
   try {
-    const { rows: matches } = await q('SELECT * FROM matches ORDER BY match_date, time_ist');
-    const { rows: myVoteRows } = await q('SELECT match_number, voted_for FROM votes WHERE mobile=$1', [req.userMobile]);
-    const { rows: myPickRows } = await q('SELECT match_number, award_key, pick FROM award_picks WHERE mobile=$1', [req.userMobile]);
-    const myVotes = {}, myPicks = {};
-    myVoteRows.forEach(v => myVotes[v.match_number] = v.voted_for);
-    myPickRows.forEach(p => {
+    const mobile = req.userMobile;
+    // All data in 4 flat queries — no per-match loops
+    const [mRes, vRes, pickRes, vsRes, mrRes] = await Promise.all([
+      q('SELECT * FROM matches ORDER BY match_date, time_ist'),
+      q('SELECT match_number, voted_for FROM votes WHERE mobile=$1', [mobile]),
+      q('SELECT match_number, award_key, pick FROM award_picks WHERE mobile=$1', [mobile]),
+      q('SELECT voted_for, match_number, COUNT(*) as c FROM votes GROUP BY match_number, voted_for'),
+      q('SELECT * FROM match_results'),
+    ]);
+
+    // Build lookup maps
+    const myVotes = {}, myPicks = {}, voteGroups = {}, matchResults = {};
+    vRes.rows.forEach(v => myVotes[v.match_number] = v.voted_for);
+    pickRes.rows.forEach(p => {
       if (!myPicks[p.match_number]) myPicks[p.match_number] = {};
       myPicks[p.match_number][p.award_key] = p.pick;
     });
-    const result = await Promise.all(matches.map(async m => {
-      const { stats, total } = await getVoteStats(m.match_number);
-      const { rows: mrRows } = await q('SELECT * FROM match_results WHERE match_number=$1', [m.match_number]);
-      return { ...m, my_vote: myVotes[m.match_number] || null, my_picks: myPicks[m.match_number] || {}, vote_stats: stats, total_votes: total, match_result: mrRows[0] || null };
-    }));
+    vsRes.rows.forEach(r => {
+      if (!voteGroups[r.match_number]) voteGroups[r.match_number] = [];
+      voteGroups[r.match_number].push(r);
+    });
+    mrRes.rows.forEach(r => matchResults[r.match_number] = r);
+
+    const result = mRes.rows.map(m => {
+      const rows = voteGroups[m.match_number] || [];
+      const total = rows.reduce((a, b) => a + parseInt(b.c), 0);
+      const stats = {};
+      [m.team1, m.team2].forEach(t => stats[t] = { count: 0, pct: 0 });
+      rows.forEach(r => stats[r.voted_for] = { count: parseInt(r.c), pct: total ? Math.round(parseInt(r.c) / total * 100) : 0 });
+      return {
+        ...m,
+        my_vote: myVotes[m.match_number] || null,
+        my_picks: myPicks[m.match_number] || {},
+        vote_stats: stats,
+        total_votes: total,
+        match_result: matchResults[m.match_number] || null,
+      };
+    });
     res.json(result);
-  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+  } catch (e) { console.error('GET /api/matches error:', e.message); res.status(500).json({ error: 'Server error: ' + e.message }); }
 });
 
 // ─── USER: VOTE ───────────────────────────────────────────────────────────────
@@ -494,13 +538,25 @@ app.patch('/api/admin/users/:mobile/reset-pin', requireAdmin, async (req, res) =
 
 // ─── ADMIN: MATCHES ───────────────────────────────────────────────────────────
 app.get('/api/admin/matches', requireAdmin, async (req, res) => {
-  const { rows: matches } = await q('SELECT * FROM matches ORDER BY match_date, time_ist');
-  const result = await Promise.all(matches.map(async m => {
-    const { stats, total } = await getVoteStats(m.match_number);
-    const { rows: mrRows } = await q('SELECT * FROM match_results WHERE match_number=$1', [m.match_number]);
-    return { ...m, vote_stats: stats, total_votes: total, match_result: mrRows[0] || null };
-  }));
-  res.json(result);
+  try {
+    const [mRes, vsRes, mrRes] = await Promise.all([
+      q('SELECT * FROM matches ORDER BY match_date, time_ist'),
+      q('SELECT match_number, voted_for, COUNT(*) as c FROM votes GROUP BY match_number, voted_for'),
+      q('SELECT * FROM match_results'),
+    ]);
+    const voteGroups = {}, matchResults = {};
+    vsRes.rows.forEach(r => { if (!voteGroups[r.match_number]) voteGroups[r.match_number] = []; voteGroups[r.match_number].push(r); });
+    mrRes.rows.forEach(r => matchResults[r.match_number] = r);
+    const result = mRes.rows.map(m => {
+      const rows = voteGroups[m.match_number] || [];
+      const total = rows.reduce((a, b) => a + parseInt(b.c), 0);
+      const stats = {};
+      [m.team1, m.team2].forEach(t => stats[t] = { count: 0, pct: 0 });
+      rows.forEach(r => stats[r.voted_for] = { count: parseInt(r.c), pct: total ? Math.round(parseInt(r.c) / total * 100) : 0 });
+      return { ...m, vote_stats: stats, total_votes: total, match_result: matchResults[m.match_number] || null };
+    });
+    res.json(result);
+  } catch (e) { console.error('GET /api/admin/matches error:', e.message); res.status(500).json({ error: e.message }); }
 });
 app.post('/api/admin/matches', requireAdmin, async (req, res) => {
   const { match_number, team1, team2, match_date, venue, time_ist } = req.body;
@@ -614,4 +670,9 @@ app.get('/admin*',(_,res)=>res.sendFile(path.join(__dirname,'public','admin.html
 app.get('*',(_,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 
 const PORT = process.env.PORT || 3000;
-initDB().then(()=>app.listen(PORT,()=>console.log(`\n🏏 IPL Voting → http://localhost:${PORT}\n   Admin → http://localhost:${PORT}/admin  [key: ${ADMIN_KEY}]\n`)));
+initDB()
+  .then(() => app.listen(PORT, () => console.log(`\n🏏 IPL Voting → http://localhost:${PORT}\n   Admin → http://localhost:${PORT}/admin  [key: ${ADMIN_KEY}]\n`)))
+  .catch(err => { console.error('❌ STARTUP FAILED:', err.message); process.exit(1); });
+
+// Catch unhandled promise rejections so Render logs show the real error
+process.on('unhandledRejection', (err) => console.error('Unhandled rejection:', err?.message || err));
