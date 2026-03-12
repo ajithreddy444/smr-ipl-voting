@@ -23,18 +23,10 @@ body::before{content:'';position:fixed;inset:0;
   pointer-events:none;z-index:0}
 
 /* ── TEAM LOGOS ─────────────────────────────────────────────────────────────── */
-.team-logo{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:900;letter-spacing:-0.5px;font-family:'Nunito',sans-serif;flex-shrink:0}
-.logo-RCB{background:linear-gradient(135deg,#dc2626,#7f1d1d);color:#fca5a5}
-.logo-MI{background:linear-gradient(135deg,#1d4ed8,#1e3a8a);color:#93c5fd}
-.logo-CSK{background:linear-gradient(135deg,#ca8a04,#78350f);color:#fde68a}
-.logo-KKR{background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#ddd6fe}
-.logo-SRH{background:linear-gradient(135deg,#ea580c,#7c2d12);color:#fed7aa}
-.logo-DC{background:linear-gradient(135deg,#0284c7,#0c4a6e);color:#bae6fd}
-.logo-RR{background:linear-gradient(135deg,#1e40af,#1e3a8a);color:#93c5fd}
-.logo-GT{background:linear-gradient(135deg,#4b5563,#111827);color:#e5e7eb}
-.logo-LSG{background:linear-gradient(135deg,#0891b2,#0e7490);color:#a5f3fc}
-.logo-PBKS{background:linear-gradient(135deg,#b91c1c,#7f1d1d);color:#fca5a5}
-.logo-TBD{background:var(--surf2);color:var(--muted)}
+.team-logo-lg{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.team-logo-lg svg,.team-logo-lg img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.mini-logo{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;opacity:.85}
+.mini-logo svg{width:100%;height:100%}
 
 /* ── LOGIN ───────────────────────────────────────────────────────────────────── */
 #loginPage{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1}
@@ -86,7 +78,7 @@ main{padding:0 0 60px}
 .filter-btn.active,.filter-btn:hover{border-color:var(--acc);color:var(--acc);background:rgba(245,166,35,.07)}
 
 /* ── MATCH CARD ──────────────────────────────────────────────────────────────── */
-.match-card{background:var(--surf);border:1px solid var(--brd);border-radius:18px;margin-bottom:10px;overflow:hidden;transition:.3s}
+.match-card{background:var(--surf);border:1px solid var(--brd);border-radius:18px;margin-bottom:10px;transition:.3s}
 .match-card.highlighted{border-color:var(--acc);box-shadow:0 0 0 2px rgba(245,166,35,.2),0 8px 32px rgba(0,0,0,.4)}
 .mc-stripe{height:3px;background:var(--brd)}
 .mc-stripe.s-open{background:linear-gradient(90deg,var(--grn),#00a882)}
@@ -159,7 +151,7 @@ main{padding:0 0 60px}
 .player-picker{position:relative}
 .player-search{width:100%;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:8px 11px;color:var(--txt);font-family:'Nunito',sans-serif;font-size:.8rem;outline:none;transition:.2s}
 .player-search:focus{border-color:var(--purple);box-shadow:0 0 0 2px rgba(139,92,246,.1)}
-.player-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--brd);border-radius:10px;z-index:50;max-height:180px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none;margin-top:3px}
+.player-dropdown{position:fixed;background:var(--surf);border:1px solid var(--purple);border-radius:12px;z-index:9000;max-height:220px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.7);display:none;width:260px}
 .player-dropdown.open{display:block}
 .player-option{padding:9px 13px;font-size:.8rem;cursor:pointer;transition:.15s;border-bottom:1px solid rgba(30,40,64,.5)}
 .player-option:last-child{border-bottom:none}
@@ -295,10 +287,10 @@ main{padding:0 0 60px}
 <script>
 const TEAM_NAMES={RCB:'Royal Challengers',MI:'Mumbai Indians',CSK:'Chennai Super Kings',KKR:'Kolkata Knight Riders',SRH:'Sunrisers Hyd',DC:'Delhi Capitals',RR:'Rajasthan Royals',GT:'Gujarat Titans',LSG:'Lucknow Super Giants',PBKS:'Punjab Kings',TBD:'TBD'};
 const AWARDS=[
-  {key:'potm',label:'Player of the Match',emoji:'⭐',pts:'+0.25',desc:'Best overall performer'},
-  {key:'super_striker',label:'Super Striker',emoji:'💥',pts:'+0.25',desc:'Highest strike rate (min 15 balls)'},
-  {key:'super_sixes',label:'Six Machine',emoji:'🚀',pts:'+0.25',desc:'Most sixes in the match'},
-  {key:'fours_king',label:'Fours King',emoji:'🎯',pts:'+0.25',desc:'Most fours in the match'},
+  {key:'potm',label:'Player of the Match',emoji:'⭐',desc:'Best overall performer'},
+  {key:'super_striker',label:'Super Striker',emoji:'💥',desc:'Highest strike rate (min 15 balls)'},
+  {key:'super_sixes',label:'Six Machine',emoji:'🚀',desc:'Most sixes in the match'},
+  {key:'fours_king',label:'Fours King',emoji:'🎯',desc:'Most fours in the match'},
 ];
 const TEAMS_LIST=['RCB','MI','CSK','KKR','SRH','DC','RR','GT','LSG','PBKS'];
 
@@ -311,8 +303,9 @@ let currentFilter='all', deepLinkMatch=null, activeLBTab='overall';
 // Team logos on login page
 (function(){
   const el=document.getElementById('loginTeamLogos');
-  TEAMS_LIST.forEach(t=>{
-    el.innerHTML+=`<div class="mini-logo logo-${t}">${t.slice(0,2)}</div>`;
+  ['RCB','MI','CSK','KKR','SRH','DC','RR','GT','LSG','PBKS'].forEach(t=>{
+    const svg=TEAM_SVG[t]||'';
+    el.innerHTML+=`<div class="mini-logo" style="width:32px;height:32px">${svg}</div>`;
   });
   const p=new URLSearchParams(window.location.search);
   if(p.get('vote')){deepLinkMatch=p.get('vote').toUpperCase();window.history.replaceState({},'',window.location.pathname);}
@@ -383,8 +376,130 @@ function renderMatches(f){
   el.innerHTML=list.map(matchCardHTML).join('');
 }
 
+// ── TEAM SVG LOGOS ────────────────────────────────────────────────────────────
+const TEAM_SVG={
+  RCB:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#1a0000" stroke="#dc2626" stroke-width="3"/>
+    <circle cx="50" cy="50" r="36" fill="#dc2626"/>
+    <!-- Lion head simplified -->
+    <ellipse cx="50" cy="44" rx="16" ry="14" fill="#fbbf24"/>
+    <ellipse cx="50" cy="44" rx="20" ry="18" fill="none" stroke="#fbbf24" stroke-width="5"/>
+    <circle cx="44" cy="41" r="2.5" fill="#1a0000"/>
+    <circle cx="56" cy="41" r="2.5" fill="#1a0000"/>
+    <path d="M45 48 Q50 52 55 48" stroke="#1a0000" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M37 26 Q50 18 63 26" stroke="#fbbf24" stroke-width="3" fill="#fbbf24" opacity=".6"/>
+    <text x="50" y="78" text-anchor="middle" font-family="Arial Black" font-size="11" font-weight="900" fill="#fbbf24" letter-spacing="1">RCB</text>
+  </svg>`,
+  MI:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#001f6e" stroke="#3b82f6" stroke-width="3"/>
+    <!-- Rising sun -->
+    <path d="M50 30 L53 20 L50 14 L47 20 Z" fill="#f5a623"/>
+    <path d="M65 35 L73 28 L72 22 L64 28 Z" fill="#f5a623"/>
+    <path d="M70 50 L80 47 L82 41 L72 44 Z" fill="#f5a623"/>
+    <path d="M35 35 L27 28 L28 22 L36 28 Z" fill="#f5a623"/>
+    <path d="M30 50 L20 47 L18 41 L28 44 Z" fill="#f5a623"/>
+    <circle cx="50" cy="50" r="18" fill="#f5a623"/>
+    <circle cx="50" cy="50" r="13" fill="#001f6e"/>
+    <text x="50" y="54" text-anchor="middle" font-family="Arial Black" font-size="9" font-weight="900" fill="#f5a623">MI</text>
+    <text x="50" y="78" text-anchor="middle" font-family="Arial Black" font-size="9" font-weight="900" fill="#93c5fd" letter-spacing="1">MUMBAI</text>
+  </svg>`,
+  CSK:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#0a2240" stroke="#f5c518" stroke-width="3"/>
+    <!-- Roaring lion -->
+    <ellipse cx="50" cy="46" rx="18" ry="16" fill="#f5c518"/>
+    <!-- Mane -->
+    <circle cx="50" cy="46" r="22" fill="none" stroke="#e08710" stroke-width="7" opacity=".7"/>
+    <circle cx="43" cy="43" r="2.8" fill="#0a2240"/>
+    <circle cx="57" cy="43" r="2.8" fill="#0a2240"/>
+    <path d="M44 50 Q50 55 56 50" stroke="#0a2240" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Whiskers -->
+    <line x1="32" y1="47" x2="44" y2="48" stroke="#0a2240" stroke-width="1"/>
+    <line x1="32" y1="50" x2="44" y2="50" stroke="#0a2240" stroke-width="1"/>
+    <line x1="68" y1="47" x2="56" y2="48" stroke="#0a2240" stroke-width="1"/>
+    <line x1="68" y1="50" x2="56" y2="50" stroke="#0a2240" stroke-width="1"/>
+    <text x="50" y="78" text-anchor="middle" font-family="Arial Black" font-size="11" font-weight="900" fill="#f5c518" letter-spacing="1">CSK</text>
+  </svg>`,
+  KKR:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#1a0533" stroke="#8b5cf6" stroke-width="3"/>
+    <!-- Knight / helmet shield -->
+    <path d="M50 20 L70 30 L70 55 Q70 68 50 78 Q30 68 30 55 L30 30 Z" fill="#7c3aed"/>
+    <path d="M50 26 L64 34 L64 54 Q64 64 50 72 Q36 64 36 54 L36 34 Z" fill="#f5c518"/>
+    <!-- K letter bold -->
+    <text x="50" y="62" text-anchor="middle" font-family="Arial Black" font-size="26" font-weight="900" fill="#7c3aed">K</text>
+    <text x="50" y="90" text-anchor="middle" font-family="Arial Black" font-size="9" font-weight="900" fill="#c4b5fd" letter-spacing="1">KKR</text>
+  </svg>`,
+  SRH:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#1a0800" stroke="#f97316" stroke-width="3"/>
+    <!-- Sun / sunrise rays -->
+    <circle cx="50" cy="48" r="18" fill="#f97316"/>
+    <circle cx="50" cy="48" r="12" fill="#fbbf24"/>
+    ${[0,45,90,135,180,225,270,315].map((a,i)=>{const r=a*Math.PI/180;const x1=50+22*Math.sin(r);const y1=48-22*Math.cos(r);const x2=50+30*Math.sin(r);const y2=48-30*Math.cos(r);return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>`}).join('')}
+    <text x="50" y="78" text-anchor="middle" font-family="Arial Black" font-size="11" font-weight="900" fill="#fed7aa" letter-spacing="1">SRH</text>
+  </svg>`,
+  DC:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#001b4e" stroke="#0ea5e9" stroke-width="3"/>
+    <!-- Kite / diamond shape -->
+    <path d="M50 18 L72 50 L50 72 L28 50 Z" fill="#0ea5e9"/>
+    <path d="M50 24 L67 50 L50 66 L33 50 Z" fill="#dc2626"/>
+    <path d="M50 30 L62 50 L50 60 L38 50 Z" fill="#001b4e"/>
+    <text x="50" y="54" text-anchor="middle" font-family="Arial Black" font-size="12" font-weight="900" fill="#0ea5e9">DC</text>
+    <text x="50" y="84" text-anchor="middle" font-family="Arial Black" font-size="8" font-weight="900" fill="#7dd3fc" letter-spacing="1">DELHI</text>
+  </svg>`,
+  RR:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#12006b" stroke="#ec4899" stroke-width="3"/>
+    <!-- Royals crown -->
+    <path d="M25 62 L28 42 L38 54 L50 30 L62 54 L72 42 L75 62 Z" fill="#ec4899"/>
+    <path d="M25 62 L75 62 L72 68 L28 68 Z" fill="#f472b6"/>
+    <!-- Crown jewels -->
+    <circle cx="50" cy="30" r="4" fill="#fbbf24"/>
+    <circle cx="28" cy="42" r="3" fill="#fbbf24"/>
+    <circle cx="72" cy="42" r="3" fill="#fbbf24"/>
+    <text x="50" y="84" text-anchor="middle" font-family="Arial Black" font-size="11" font-weight="900" fill="#f0abfc" letter-spacing="1">RR</text>
+  </svg>`,
+  GT:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#0d1117" stroke="#6b7280" stroke-width="3"/>
+    <!-- Lion head for Gujarat Titans -->
+    <ellipse cx="50" cy="46" rx="17" ry="15" fill="#9ca3af"/>
+    <circle cx="50" cy="46" r="21" fill="none" stroke="#6b7280" stroke-width="6" opacity=".6"/>
+    <circle cx="44" cy="43" r="2.5" fill="#0d1117"/>
+    <circle cx="56" cy="43" r="2.5" fill="#0d1117"/>
+    <path d="M44 50 Q50 55 56 50" stroke="#0d1117" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- GT shield accent -->
+    <path d="M35 22 L50 16 L65 22 L65 35 Q65 42 50 48 Q35 42 35 35 Z" fill="#1b6cc8" opacity=".8"/>
+    <text x="50" y="34" text-anchor="middle" font-family="Arial Black" font-size="11" font-weight="900" fill="white">GT</text>
+    <text x="50" y="78" text-anchor="middle" font-family="Arial Black" font-size="9" font-weight="900" fill="#d1d5db" letter-spacing="1">TITANS</text>
+  </svg>`,
+  LSG:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#001a2e" stroke="#06b6d4" stroke-width="3"/>
+    <!-- Super Giants - lightning bolt -->
+    <polygon points="58,18 42,50 52,50 42,82 62,46 50,46" fill="#06b6d4"/>
+    <polygon points="58,18 42,50 52,50 42,82 62,46 50,46" fill="none" stroke="#a5f3fc" stroke-width="1.5"/>
+    <text x="50" y="92" text-anchor="middle" font-family="Arial Black" font-size="8" font-weight="900" fill="#67e8f9" letter-spacing=".5">LUCKNOW</text>
+  </svg>`,
+  PBKS:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#3d0000" stroke="#dc2626" stroke-width="3"/>
+    <!-- Lion with sword - Punjab Kings -->
+    <ellipse cx="50" cy="44" rx="16" ry="14" fill="#f97316"/>
+    <circle cx="50" cy="44" r="20" fill="none" stroke="#dc2626" stroke-width="5" opacity=".7"/>
+    <circle cx="43" cy="41" r="2.5" fill="#3d0000"/>
+    <circle cx="57" cy="41" r="2.5" fill="#3d0000"/>
+    <path d="M45 48 Q50 53 55 48" stroke="#3d0000" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Sword -->
+    <line x1="50" y1="62" x2="50" y2="82" stroke="#fbbf24" stroke-width="3"/>
+    <path d="M44 65 L56 65" stroke="#fbbf24" stroke-width="2.5"/>
+    <polygon points="50,58 47,65 53,65" fill="#fbbf24"/>
+    <text x="50" y="94" text-anchor="middle" font-family="Arial Black" font-size="9" font-weight="900" fill="#fca5a5" letter-spacing="1">PBKS</text>
+  </svg>`,
+  TBD:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#1e2840" stroke="#4d5a7a" stroke-width="2"/>
+    <text x="50" y="44" text-anchor="middle" font-family="Arial" font-size="28" fill="#4d5a7a">?</text>
+    <text x="50" y="68" text-anchor="middle" font-family="Arial Black" font-size="10" fill="#4d5a7a">TBD</text>
+  </svg>`,
+};
+
 function teamLogoHTML(team, size=44){
-  return `<div class="team-logo-lg logo-${team}" style="width:${size}px;height:${size}px;font-size:${size*.18}px">${team}</div>`;
+  const svg=TEAM_SVG[team]||TEAM_SVG.TBD;
+  return `<div class="team-logo-lg" style="width:${size}px;height:${size}px">${svg}</div>`;
 }
 
 function matchCardHTML(m){
@@ -406,8 +521,27 @@ function matchCardHTML(m){
     if(voted){
       const cls=isVoid?'result-void':correct?'result-correct':'result-wrong';
       const icon=isVoid?'🚫':correct?'🎉':'😞';
-      const txt=isVoid?`Match ${m.winner.replace('_',' ')} — No points`
-        :correct?`Correct! Picked ${m.my_vote} — +1 pt 🎊`:`Wrong. Picked ${m.my_vote}, ${m.winner} won`;
+
+      // Calculate award pts earned this match
+      const mr=m.match_result||{};
+      const picks=m.my_picks||{};
+      let awardEarned=0;
+      ['potm','super_striker','super_sixes','fours_king'].forEach(k=>{
+        if(mr[k]&&picks[k]&&picks[k]===mr[k]) awardEarned+=0.25;
+      });
+
+      let txt='';
+      if(isVoid){
+        txt=`Match ${m.winner.replace('_',' ')} — No points`;
+      } else if(correct){
+        const extras=[];
+        if(awardEarned>0) extras.push(`+${awardEarned.toFixed(2)} awards`);
+        txt=`Correct! +1 pt${extras.length?' · '+extras.join(' · '):''}`;
+      } else {
+        const extras=[];
+        if(awardEarned>0) extras.push(`+${awardEarned.toFixed(2)} awards`);
+        txt=`Wrong pick. ${m.winner} won${extras.length?' · '+extras.join(' · '):''}`;
+      }
       actionHTML=`<div class="${cls}">${icon} ${txt}</div>`;
     } else if(!isVoid){
       actionHTML=`<div class="disabled-pill">Match ended — ${m.winner} won</div>`;
@@ -453,7 +587,7 @@ function matchCardHTML(m){
   if(showAwards&&t1!=='TBD'){
     const mr=m.match_result||{};
     awardsHTML=`<div class="awards-section">
-      <div class="awards-title">⭐ Award Picks <span style="font-size:.58rem;color:var(--muted);font-weight:700">— each worth +0.25 pts</span></div>
+      <div class="awards-title">⭐ Award Picks <span style="font-size:.58rem;color:var(--muted);font-weight:700">— correct pick earns bonus pts</span></div>
       ${AWARDS.map(a=>{
         const myPick=m.my_picks?.[a.key];
         const result=done&&mr[a.key];
@@ -483,7 +617,6 @@ function matchCardHTML(m){
         return `<div class="award-row">
           <div class="award-header">
             <div class="award-meta"><span class="award-emoji">${a.emoji}</span><span class="award-name">${a.label}</span></div>
-            <span class="award-pts">${a.pts}</span>
           </div>
           <div class="award-desc">${a.desc}</div>
           ${pickUI}
@@ -548,19 +681,39 @@ async function openDropdown(mn,akey){
   if(!playerCache[mn]) await loadPlayersForMatch(mn);
   filterPlayers(mn,akey,document.getElementById(`ps-${mn}-${akey}`)?.value||'');
 }
+function positionDropdown(mn,akey){
+  const inp=document.getElementById(`ps-${mn}-${akey}`);
+  const dd=document.getElementById(`pd-${mn}-${akey}`);
+  if(!inp||!dd) return;
+  const rect=inp.getBoundingClientRect();
+  const spaceBelow=window.innerHeight-rect.bottom;
+  const dropH=Math.min(220,dd.scrollHeight||220);
+  if(spaceBelow>dropH+10){
+    // open downward
+    dd.style.top=(rect.bottom+4+window.scrollY)+'px';
+    dd.style.bottom='auto';
+  } else {
+    // open upward
+    dd.style.top='auto';
+    dd.style.bottom=(window.innerHeight-rect.top+4)+'px';
+  }
+  dd.style.left=Math.max(8,rect.left)+'px';
+  dd.style.width=Math.min(280,window.innerWidth-16)+'px';
+}
 function filterPlayers(mn,akey,query){
   const dd=document.getElementById(`pd-${mn}-${akey}`);if(!dd)return;
   const players=playerCache[mn]?.all||[];
   const q=(query||'').toLowerCase().trim();
   const filtered=q?players.filter(p=>p.name.toLowerCase().includes(q)):players;
-  if(!filtered.length){dd.innerHTML='<div class="player-option" style="color:var(--muted)">No players found</div>';dd.classList.add('open');return;}
+  if(!filtered.length){dd.innerHTML='<div class="player-option" style="color:var(--muted);padding:10px 13px">No players found</div>';dd.classList.add('open');positionDropdown(mn,akey);return;}
   const match=allMatches.find(m=>m.match_number===mn);
   const myPick=match?.my_picks?.[akey];
-  dd.innerHTML=filtered.slice(0,20).map(p=>{
+  dd.innerHTML=filtered.slice(0,25).map(p=>{
     const hl=q?p.name.replace(new RegExp(`(${q})`,'gi'),'<mark>$1</mark>'):p.name;
-    return `<div class="player-option ${p.name===myPick?'selected':''}" onmousedown="pickPlayer('${mn}','${akey}','${p.name.replace(/'/,"\\'")}')">${hl} <span style="font-size:.65rem;color:var(--muted)">${p.team}</span></div>`;
+    return `<div class="player-option ${p.name===myPick?'selected':''}" onmousedown="pickPlayer('${mn}','${akey}','${p.name.replace(/'/,"\\'")}')">${hl} <span style="font-size:.62rem;color:var(--muted);margin-left:4px">${p.team}</span></div>`;
   }).join('');
   dd.classList.add('open');
+  positionDropdown(mn,akey);
 }
 function closeDropdown(mn,akey){document.getElementById(`pd-${mn}-${akey}`)?.classList.remove('open');}
 async function pickPlayer(mn,akey,player){

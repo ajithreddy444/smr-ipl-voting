@@ -508,8 +508,8 @@ async function loadAdminLB(type){
   if(type==='weekly'){
     const res=await api('/api/leaderboard/weekly');if(!res||!res.ok)return;
     const{week_start,week_end,leaderboard:board}=res.data;
-    const s=new Date(week_start).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
-    const e=new Date(week_end).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const s=new Date(week_start+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const e=new Date(week_end+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
     el.innerHTML=`<div class="week-badge">📅 ${s} – ${e}</div>`
       +(board.length?board.map((p,i)=>`<div class="lb-row"><div class="lb-rank">${medals[i]||i+1}</div>
         <div style="flex:1"><div style="font-weight:800;font-size:.85rem">${p.name}</div>

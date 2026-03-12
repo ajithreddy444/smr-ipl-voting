@@ -197,36 +197,47 @@ async function getVoteStats(match_number) {
   return { stats, total };
 }
 
-// Weekly window: Saturday 00:00 IST → Friday 23:59 IST
-// match_date is stored as plain 'YYYY-MM-DD' in DB so we just need IST date strings
-function getWeekWindow() {
-  // Get current date in IST (UTC+5:30)
-  const nowUTC = new Date();
-  const istOffsetMs = 5.5 * 60 * 60 * 1000;
-  const istNow = new Date(nowUTC.getTime() + istOffsetMs);
+// Weekly window: Saturday -> Friday of the week containing the most recent settled match.
+// This means "this week" always refers to the active IPL week, not today's calendar week.
+async function getWeekWindow() {
+  // Find the most recent match date that has a settled result
+  const { rows } = await q(`
+    SELECT m.match_date
+    FROM match_results mr
+    JOIN matches m ON mr.match_number = m.match_number
+    ORDER BY m.match_date DESC, m.time_ist DESC
+    LIMIT 1
+  `);
 
-  // getUTCDay() on IST-shifted date: 0=Sun,1=Mon,...,6=Sat
-  const dayOfWeek = istNow.getUTCDay();
+  let anchorDate;
+  if (rows.length) {
+    // Use the date of the latest settled match
+    anchorDate = rows[0].match_date; // already 'YYYY-MM-DD'
+  } else {
+    // No results yet -- fall back to current IST date
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    anchorDate = new Date(Date.now() + istOffsetMs).toISOString().split('T')[0];
+  }
 
-  // Days since last Saturday: Sat=6→0, Sun=0→1, Mon=1→2, ..., Fri=5→6
+  // Compute which Sat-Fri week this anchor date falls in
+  const anchor = new Date(anchorDate + 'T00:00:00Z');
+  const dayOfWeek = anchor.getUTCDay(); // 0=Sun,...,6=Sat
   const daysSinceSat = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
 
-  // Build Saturday date by subtracting days
-  const satIST = new Date(istNow);
-  satIST.setUTCDate(istNow.getUTCDate() - daysSinceSat);
-  const satDate = satIST.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+  const satDate = new Date(anchor);
+  satDate.setUTCDate(anchor.getUTCDate() - daysSinceSat);
 
-  // Friday is 6 days after Saturday
-  const friIST = new Date(satIST);
-  friIST.setUTCDate(satIST.getUTCDate() + 6);
-  const friDate = friIST.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+  const friDate = new Date(satDate);
+  friDate.setUTCDate(satDate.getUTCDate() + 6);
 
-  return { start: satDate, end: friDate };
+  return {
+    start: satDate.toISOString().split('T')[0],
+    end: friDate.toISOString().split('T')[0],
+  };
 }
 
 // Recalculate streak and total pts for a user after result is set
 async function recalcUser(mobile) {
-  // Get all settled match results in chronological order
   const { rows: history } = await q(`
     SELECT v.match_number, v.voted_for, mr.winner, m.match_date,
            mr.potm, mr.super_striker, mr.super_sixes, mr.fours_king
@@ -242,6 +253,7 @@ async function recalcUser(mobile) {
   for (const row of history) {
     const isVoid = row.winner === 'no_result' || row.winner === 'void';
     const correct = !isVoid && row.voted_for === row.winner;
+    const onStreakBonus = currentStreak >= 3; // streak BEFORE this match is counted
 
     if (correct) {
       correctVotes++;
@@ -249,8 +261,9 @@ async function recalcUser(mobile) {
       if (currentStreak > bestStreak) bestStreak = currentStreak;
       // Base 1pt for match winner
       let matchPts = 1.0;
-      // Streak bonus: from 3rd win onwards +0.5 extra
-      if (currentStreak >= 3) {
+      // Streak bonus on match win: +0.5 from 4th consecutive win onwards
+      // (streak was already >=3 before this win, i.e. this is win #4+)
+      if (onStreakBonus) {
         matchPts += 0.5;
         streakPts += 0.5;
       }
@@ -258,13 +271,16 @@ async function recalcUser(mobile) {
     } else if (!isVoid) {
       currentStreak = 0;
     }
-    // Award points
+
+    // Award points — each correct award pick is worth:
+    //   +0.25 normally, +0.50 when streak was >= 3 before this match
     if (!isVoid && row.winner) {
+      const awardVal = onStreakBonus ? 0.50 : 0.25;
       const checks = [
-        { key: 'potm', val: row.potm },
+        { key: 'potm',          val: row.potm },
         { key: 'super_striker', val: row.super_striker },
-        { key: 'super_sixes', val: row.super_sixes },
-        { key: 'fours_king', val: row.fours_king },
+        { key: 'super_sixes',   val: row.super_sixes },
+        { key: 'fours_king',    val: row.fours_king },
       ];
       const { rows: picks } = await q(
         'SELECT award_key, pick FROM award_picks WHERE mobile=$1 AND match_number=$2',
@@ -274,8 +290,9 @@ async function recalcUser(mobile) {
       picks.forEach(p => pickMap[p.award_key] = p.pick);
       for (const c of checks) {
         if (c.val && pickMap[c.key] && pickMap[c.key] === c.val) {
-          totalPts += 0.25;
-          awardPts += 0.25;
+          totalPts += awardVal;
+          awardPts += awardVal;
+          if (onStreakBonus) streakPts += 0.25; // extra 0.25 counted as streak bonus
         }
       }
     }
@@ -402,7 +419,7 @@ app.get('/api/leaderboard', async (req, res) => {
 // ─── PUBLIC: WEEKLY LEADERBOARD ──────────────────────────────────────────────
 app.get('/api/leaderboard/weekly', async (req, res) => {
   try {
-    const { start, end } = getWeekWindow();
+    const { start, end } = await getWeekWindow();
     // Get votes for matches in this week window
     const { rows } = await q(`
       SELECT u.name, u.mobile,
