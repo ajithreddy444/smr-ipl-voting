@@ -429,12 +429,18 @@ const TEAM_SVG={
     <text x="50" y="90" text-anchor="middle" font-family="Arial Black" font-size="9" font-weight="900" fill="#c4b5fd" letter-spacing="1">KKR</text>
   </svg>`,
   SRH:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="48" fill="#1a0800" stroke="#f97316" stroke-width="3"/>
-    <!-- Sun / sunrise rays -->
+    <circle cx="50" cy="48" r="48" fill="#1a0800" stroke="#f97316" stroke-width="3"/>
+    <line x1="50" y1="18" x2="50" y2="10" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="71" y1="27" x2="76" y2="21" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="80" y1="48" x2="88" y2="48" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="71" y1="69" x2="76" y2="75" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="50" y1="78" x2="50" y2="86" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="29" y1="69" x2="24" y2="75" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="20" y1="48" x2="12" y2="48" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="29" y1="27" x2="24" y2="21" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>
     <circle cx="50" cy="48" r="18" fill="#f97316"/>
     <circle cx="50" cy="48" r="12" fill="#fbbf24"/>
-    ${[0,45,90,135,180,225,270,315].map((a,i)=>{const r=a*Math.PI/180;const x1=50+22*Math.sin(r);const y1=48-22*Math.cos(r);const x2=50+30*Math.sin(r);const y2=48-30*Math.cos(r);return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"/>`}).join('')}
-    <text x="50" y="78" text-anchor="middle" font-family="Arial Black" font-size="11" font-weight="900" fill="#fed7aa" letter-spacing="1">SRH</text>
+    <text x="50" y="96" text-anchor="middle" font-family="Arial Black" font-size="9" font-weight="900" fill="#fed7aa" letter-spacing="1">SRH</text>
   </svg>`,
   DC:`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <circle cx="50" cy="50" r="48" fill="#001b4e" stroke="#0ea5e9" stroke-width="3"/>
