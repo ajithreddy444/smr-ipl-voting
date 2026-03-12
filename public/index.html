@@ -672,8 +672,8 @@ async function loadWeeklyLB(){
   el.innerHTML='<div class="loading-box"><div class="spinner"></div></div>';
   try{
     const data=await(await fetch('/api/leaderboard/weekly')).json();
-    const start=new Date(data.week_start).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
-    const end=new Date(data.week_end).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const start=new Date(data.week_start+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const end=new Date(data.week_end+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'});
     const board=data.leaderboard||[];
     const medals=['🥇','🥈','🥉'];
     el.innerHTML=`<div class="week-badge">📅 Week: ${start} – ${end}</div>`
